@@ -4,43 +4,61 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Iterator;
 import javax.imageio.ImageIO;
+import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-public class Rotate {
+public class Recognize {
 
-    /**
-     * @param args the command line arguments
-     */
     static double y, x, cnt;
     final static int maxheight = 5000;
     final static int maxWidth = 5000;
     static boolean[][] result = new boolean[maxheight][maxWidth];
     static boolean[][] result2 = new boolean[maxheight][maxWidth];
     static boolean[][] found = new boolean[maxheight][maxWidth];
-    static boolean[][] rotate = new boolean[1020][1415];
+    static boolean[][] rotate = new boolean[1020][1435];
+    static String folderPath ="SLMC";
+    static int solutionCount=62;
+    static int radius=5;
     
 
+    /**
+     * @param args the command line arguments
+     */
     public static void main(String[] args) {
-        File folder = new File("SLMC/");
+        //process();
+        //renameByRank();
+        App.main(args);
+    }
+
+    public static void process() {
+        System.out.println(solutionCount);
+        File folder = new File(folderPath);
         File[] listOfFiles = folder.listFiles();
 
-        File dir = new File("SLMC" + File.separator + "Processed");
+        File dir = new File(folderPath + File.separator + "Processed");
         if (!dir.exists()) {
             dir.mkdir();
         }
-        dir = new File("SLMC" + File.separator + "Unprocessed");
+        dir = new File(folderPath + File.separator + "Unprocessed");
         if (!dir.exists()) {
             dir.mkdir();
         }
-        dir = new File("SLMC" + File.separator + "Renamed");
+        dir = new File(folderPath + File.separator + "ByIndex");
+        if (!dir.exists()) {
+            dir.mkdir();
+        }
+        dir = new File(folderPath + File.separator + "Check");
         if (!dir.exists()) {
             dir.mkdir();
         }
@@ -48,21 +66,21 @@ public class Rotate {
 
         XSSFSheet sheet = workbook.createSheet();
         Row row;
-        
+
         for (int i = 0; i < listOfFiles.length; i++) {
             if (listOfFiles[i].isFile()) {
                 try {
                     if (listOfFiles[i].getName().endsWith(".jpg")) {
                         row = sheet.createRow(i);
-                        process(listOfFiles[i].getName(), "SLMC" + File.separator, row);
-                        File file = new File("SLMC" + File.separator + listOfFiles[i].getName());
-                        File newfile = new File("SLMC" + File.separator + "Processed" + File.separator + listOfFiles[i].getName());
+                        processImage(listOfFiles[i].getName(), folderPath + File.separator, row);
+                        File file = new File(folderPath + File.separator + listOfFiles[i].getName());
+                        File newfile = new File(folderPath + File.separator + "Processed" + File.separator + listOfFiles[i].getName());
                         file.renameTo(newfile);
                     }
 
                 } catch (Exception e) {
-                    File file = new File("SLMC" + File.separator + listOfFiles[i].getName());
-                    File newfile = new File("SLMC" + File.separator + "Unprocessed" + File.separator + listOfFiles[i].getName());
+                    File file = new File(folderPath + File.separator + listOfFiles[i].getName());
+                    File newfile = new File(folderPath + File.separator + "Unprocessed" + File.separator + listOfFiles[i].getName());
                     file.renameTo(newfile);
                 }
                 System.out.println(listOfFiles[i].getName());
@@ -71,7 +89,7 @@ public class Rotate {
 
         try {
             String time = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(Calendar.getInstance().getTime());
-            FileOutputStream fos = new FileOutputStream(new File("SLMC" + File.separator + "Results-" + time + ".xlsx"));
+            FileOutputStream fos = new FileOutputStream(new File(folderPath + File.separator + "Results-" + time + ".xlsx"));
             workbook.write(fos);
             fos.close();
         } catch (FileNotFoundException ex) {
@@ -82,9 +100,9 @@ public class Rotate {
 
     }
 
-    public static BufferedImage process(String filename, String folder, Row excelRow) throws Exception {
+    private static BufferedImage processImage(String filename, String folder, Row excelRow) throws Exception {
         try {
-                
+
             BufferedImage image
                     = ImageIO.read(new File(folder + filename));
             int width = image.getWidth();
@@ -94,7 +112,7 @@ public class Rotate {
             int limit = (int) (4 * s * s * 0.01);
             double p = 256 * 0.95;
 
-            //System.out.println(width + "  " + height);
+           // System.out.println(width + "  " + height);
             for (int row = 0; row < height; row++) {
                 for (int col = 0; col < width; col++) {
                     found[row][col] = false;
@@ -115,7 +133,7 @@ public class Rotate {
                 }
                 //  System.out.println("");
             }
-            // ImageIO.write(image, "jpg", new File(folder + "Renamed" + File.separator +filename));
+            // ImageIO.write(image, "jpg", new File(folder + "ByIndex" + File.separator +filename));
 
             //System.out.println(s+"  "+limit);
             for (int row = s; row < height - s; row++) {
@@ -192,10 +210,10 @@ public class Rotate {
             transform.translate(-x1, -y1);
             AffineTransformOp op = new AffineTransformOp(transform, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
             image = op.filter(image, null);
-            image = image.getSubimage(0, 0, 1020, 1415);
+            image = image.getSubimage(0, 0, 1020, 1435);
 
             int index = 0;
-            
+
             int c = 0;
             if (filename.contains("-")) {
                 int index1 = filename.indexOf("-");
@@ -204,7 +222,7 @@ public class Rotate {
             }
             while (c < 5) {
                 index = getIndex(image, p);
-                //System.out.println(index);
+                System.out.println(index);
                 if (index < 1000) {
                     p += 2;
                 } else if (index >= 10000) {
@@ -217,15 +235,25 @@ public class Rotate {
             if (index < 1000 || index >= 10000) {
                 throw new Exception();
             }
+            ImageIO.write(image, "jpg", new File(folder + "ByIndex" + File.separator + index + "-" + filename));
             excelRow.createCell(0).setCellValue(index);
             excelRow.createCell(1).setCellValue(filename);
-
+            
+            width=image.getWidth();
+            height=image.getHeight();
+            for(int row=0;row<height/2;row++){
+                for(int col=0;col<width;col++){
+                    image.setRGB(col, row, image.getRGB(col,row+height/2));
+                }
+            }
+            
             String[] sol = getSolutions(image);
             for (int q = 0; q < 30; q++) {
                 excelRow.createCell(q + 2).setCellValue(sol[q]);
             }
 
-            ImageIO.write(image, "jpg", new File(folder + "Renamed" + File.separator + index + "-" + filename));
+            ImageIO.write(image, "jpg", new File(folder + "Check" + File.separator + index + "-" + filename));
+
             return image;
 
         } catch (IOException e) {
@@ -234,7 +262,7 @@ public class Rotate {
         }
     }
 
-    public static void find(boolean[][] found, boolean[][] result, int X, int Y) throws Exception {
+    private static void find(boolean[][] found, boolean[][] result, int X, int Y) throws Exception {
         if (!found[X][Y] && result[X][Y]) {
             found[X][Y] = true;
             cnt++;
@@ -247,7 +275,7 @@ public class Rotate {
         }
     }
 
-    public static int getIndex(BufferedImage image, double p1) throws Exception {
+    private static int getIndex(BufferedImage image, double p1) throws Exception {
         int index = 0;
         int fx, fy, gx, gy, height = image.getHeight(), width = image.getWidth();
 
@@ -273,7 +301,7 @@ public class Rotate {
         gy = 1268;
 
         for (int q = 0; q < 4; q++) {
-            int marked=0;
+            int marked = 0;
             for (int a = 0; a < 10; a++) {
                 int qx = (int) Math.round(q * (gx - fx) / 3.00);
                 int qy = (int) Math.round(a * (gy - fy) / 9.00);
@@ -287,7 +315,7 @@ public class Rotate {
                         //image.setRGB(i, j, 0);
                     }
                 }
-                
+
                 if (count > 112) {
                     //System.out.println(" "+q+" "+a+"  "+count);
                     index *= 10;
@@ -296,8 +324,9 @@ public class Rotate {
                     // break;
                 }
             }
-            if(marked>1)
+            if (marked > 1) {
                 return 10000;
+            }
 
         }
         System.out.print("  " + index + "  ");
@@ -305,7 +334,7 @@ public class Rotate {
         return index;
     }
 
-    public static String[] getSolutions(BufferedImage image) {
+    private static String[] getSolutions(BufferedImage image) {
 
         int fx, fy, gx, gy;
         fx = 220;
@@ -319,8 +348,8 @@ public class Rotate {
                 int qx = (int) Math.round((q % 15) * (gx - fx) / 14.00);
                 int qy = (int) Math.round(a * (gy - fy) / 4.00);
                 int count = 0;
-                for (int i = fx + qx - 7; i <= fx + qx + 7; i++) {
-                    for (int j = fy + qy - 7; j <= fy + qy + 7; j++) {
+                for (int i = fx + qx - radius; i <= fx + qx + radius; i++) {
+                    for (int j = fy + qy - radius; j <= fy + qy + radius; j++) {
 
                         if (rotate[i][j]) {
                             count++;
@@ -328,14 +357,23 @@ public class Rotate {
                         //image.setRGB(i, j, 0);
                     }
                 }
-                if (count > 112) {
+                int colour=16777215;
+                if (count > solutionCount) {
                     sol[q] += (char) ('A' + a);
+                    colour=0;
+                //    System.out.println(count+" "+q+"  "+sol[q]);
+                }
+                for (int i = fx + qx - radius; i <= fx + qx + radius; i++) {
+                    for (int j = fy + qy - radius; j <= fy + qy + radius; j++) {
+                        image.setRGB(i, j, colour);
+                    }
                 }
             }
             if (sol[q].equals("")) {
                 sol[q] = "U";
             } else if (sol[q].length() > 1) {
                 sol[q] = "M";
+                System.out.println("asdasdasdasdasdasdasd");
             }
 
             System.out.print(sol[q]);
@@ -346,4 +384,113 @@ public class Rotate {
         }
         return sol;
     }
+/*
+    public static void cropHandWritten() {
+        String fPath=folderPath+File.separator+"ByIndex"+File.separator;
+        File folder = new File(fPath);
+        File[] listOfFiles = folder.listFiles();
+
+        File dir = new File(fPath + File.separator + "Name");
+        if (!dir.exists()) {
+            dir.mkdir();
+        }
+        dir = new File(fPath + File.separator + "Telephone");
+        if (!dir.exists()) {
+            dir.mkdir();
+        }
+        dir = new File(fPath + File.separator + "Email");
+        if (!dir.exists()) {
+            dir.mkdir();
+        }
+
+        for (File listOfFile : listOfFiles) {
+            if (listOfFile.isFile()) {
+                try {
+                    cropHandWrittenImage(ImageIO.read(new File(fPath + File.separator + listOfFile.getName())), fPath, listOfFile.getName());
+                } catch (IOException e) {
+                }
+                System.out.println(listOfFile.getName());
+            }
+        }
+
+    }
+*/
+    private static void cropHandWrittenImage(BufferedImage image, String folder, String filename) {
+
+        try {
+            BufferedImage temp = image.getSubimage(145, 244, 564, 117);
+            ImageIO.write(temp, "jpg", new File(folder + "Name" + File.separator + "Name-" + filename));
+            temp = image.getSubimage(145, 422, 295, 25);
+            ImageIO.write(temp, "jpg", new File(folder + "Telephone" + File.separator + "Telephone-" + filename));
+            temp = image.getSubimage(743, 422, 276, 28);
+            ImageIO.write(temp, "jpg", new File(folder + "Email" + File.separator + "Email-" + filename));
+
+        } catch (IOException ex) {
+
+        }
+
+    }
+
+    public static void renameByRank() {
+        String f = folderPath + File.separator;
+        File dir = new File(f + "ByRank" + File.separator + "Name");
+        if (!dir.exists()) {
+            dir.mkdir();
+        }
+        dir = new File(f + "ByRank" + File.separator + "Email");
+        if (!dir.exists()) {
+            dir.mkdir();
+        }
+        dir = new File(f + "ByRank" + File.separator + "Telephone");
+        if (!dir.exists()) {
+            dir.mkdir();
+        }
+        try {
+            FileInputStream in = new FileInputStream(new File(f + "Results.xlsx"));
+            XSSFWorkbook workbook = new XSSFWorkbook(in);
+
+            XSSFSheet sheet = workbook.getSheetAt(0);
+
+            Iterator<Row> rowIter = sheet.iterator();
+            while (rowIter.hasNext()) {
+                Row row = rowIter.next();
+                Iterator<Cell> cellIter = row.cellIterator();
+                String[] arr = new String[3];
+                for (int i = 0; i < 3; i++) {
+                    Cell cell = cellIter.next();
+                    String text = "";
+                    switch (cell.getCellType()) {
+                        case Cell.CELL_TYPE_NUMERIC:
+                            text = (int) cell.getNumericCellValue() + "";
+                            break;
+                        case Cell.CELL_TYPE_STRING:
+                            text = cell.getStringCellValue();
+                            break;
+                    }
+                    arr[i] = text;
+                }
+                System.out.println(f + "ByIndex" + File.separator + arr[0] + "-" + arr[1]);
+                arr[2] = (Integer.parseInt(arr[2]) + 10000 + "").substring(1);
+
+                copy(f + "ByIndex" + File.separator + arr[0] + "-" + arr[1],
+                        f + "ByRank" + File.separator + arr[2] + "-" + arr[0] + "-" + arr[1]
+                );
+                cropHandWrittenImage(ImageIO.read(new File(f + "ByRank" + File.separator + arr[2] + "-" + arr[0] + "-" + arr[1])),
+                        f,"ByRank" + File.separator + arr[2] + "-" + arr[0] + "-" + arr[1]);
+            }
+        } catch (IOException | NumberFormatException e) {
+            System.out.println(e.getLocalizedMessage());
+        }
+
+    }
+
+    private static void copy(String source, String dest) {
+        try {
+            File oldFile = new File(source);
+            File newFile = new File(dest);
+            Files.copy(oldFile.toPath(), newFile.toPath());
+        } catch (IOException ex) {
+        }
+    }
+
 }

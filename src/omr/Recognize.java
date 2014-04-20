@@ -42,7 +42,7 @@ public class Recognize {
     }
 
     public static void process() {
-        System.out.println(solutionCount);
+        //System.out.println(solutionCount);
         File folder = new File(folderPath);
         File[] listOfFiles = folder.listFiles();
 
@@ -122,10 +122,10 @@ public class Recognize {
                     blue = (rgb) & 0x000000FF;
                     boolean black = false;
                     if (red < p && blue < p && green < p) {
-                        //            image.setRGB(col, row, 0);
+                    //               image.setRGB(col, row, 0);
                         black = true;
                     } else {
-                        //            image.setRGB(col, row, 16777215);
+                    //                image.setRGB(col, row, 16777215);
                     }
 
                     result[row][col] = black;
@@ -195,7 +195,7 @@ public class Recognize {
 
             y1 = (int) (y / cnt);
             x1 = (int) (x / cnt);
-            //System.out.println(x2+"  "+x1+" "+y2+"  "+y1);
+            //System.out.println(filename+"  "+x2+"  "+x1+" "+y2+"  "+y1);
             y = 0;
             x = 0;
             cnt = 0;
@@ -215,14 +215,18 @@ public class Recognize {
             int index = 0;
 
             int c = 0;
+            boolean manual=false;
             if (filename.contains("-")) {
+                manual=true;
                 int index1 = filename.indexOf("-");
                 int index2 = filename.indexOf(".");
-                index = Integer.parseInt(filename.substring(index1, index2));
+                index = Integer.parseInt(filename.substring(index1+1, index2));
+                //System.out.println("manual "+index);
+                filename=filename.substring(0,index1)+filename.substring(index2);
             }
-            while (c < 5) {
+            while (c < 5 &&!manual) {
                 index = getIndex(image, p);
-                System.out.println(index);
+                //System.out.println(index);
                 if (index < 1000) {
                     p += 2;
                 } else if (index >= 10000) {
@@ -231,6 +235,9 @@ public class Recognize {
                     break;
                 }
                 c++;
+            }
+            if(manual){
+                getIndex(image, p);
             }
             if (index < 1000 || index >= 10000) {
                 throw new Exception();
@@ -329,7 +336,7 @@ public class Recognize {
             }
 
         }
-        System.out.print("  " + index + "  ");
+        //System.out.print("  " + index + "  ");
 
         return index;
     }
@@ -373,7 +380,7 @@ public class Recognize {
                 sol[q] = "U";
             } else if (sol[q].length() > 1) {
                 sol[q] = "M";
-                System.out.println("asdasdasdasdasdasdasd");
+                //System.out.println("asdasdasdasdasdasdasd");
             }
 
             System.out.print(sol[q]);
@@ -433,7 +440,12 @@ public class Recognize {
 
     public static void renameByRank() {
         String f = folderPath + File.separator;
-        File dir = new File(f + "ByRank" + File.separator + "Name");
+        System.out.println(f);
+        File dir = new File(f + "ByRank");
+        if (!dir.exists()) {
+            dir.mkdir();
+        }
+        dir = new File(f + "ByRank" + File.separator + "Name");
         if (!dir.exists()) {
             dir.mkdir();
         }
@@ -476,7 +488,7 @@ public class Recognize {
                         f + "ByRank" + File.separator + arr[2] + "-" + arr[0] + "-" + arr[1]
                 );
                 cropHandWrittenImage(ImageIO.read(new File(f + "ByRank" + File.separator + arr[2] + "-" + arr[0] + "-" + arr[1])),
-                        f,"ByRank" + File.separator + arr[2] + "-" + arr[0] + "-" + arr[1]);
+                        f+"ByRank" + File.separator,arr[2] + "-" + arr[0] + "-" + arr[1]);
             }
         } catch (IOException | NumberFormatException e) {
             System.out.println(e.getLocalizedMessage());

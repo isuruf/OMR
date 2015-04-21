@@ -4,3 +4,6 @@ SLMC/
 /build/
 /dist/
 /nbproject/
+.idea/
+target/
+*.iml

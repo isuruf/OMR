@@ -13,6 +13,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Iterator;
 import javax.imageio.ImageIO;
+
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -21,15 +22,16 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 public class Recognize {
 
     static double y, x, cnt;
+    static int ux, uy, vx, vy;
     final static int maxheight = 5000;
     final static int maxWidth = 5000;
     static boolean[][] result = new boolean[maxheight][maxWidth];
     static boolean[][] result2 = new boolean[maxheight][maxWidth];
     static boolean[][] found = new boolean[maxheight][maxWidth];
     static boolean[][] rotate = new boolean[1020][1435];
-    static String folderPath ="samples";
-    static int solutionCount=62;
-    static int radius=5;
+    static String folderPath = "samples";
+    static int solutionCount = 62;
+    static int radius = 5;
 
     public static void main(String[] args) {
         //process();
@@ -38,7 +40,6 @@ public class Recognize {
     }
 
     public static void process() {
-        //System.out.println(solutionCount);
         File folder = new File(folderPath);
         File[] listOfFiles = folder.listFiles();
 
@@ -51,6 +52,10 @@ public class Recognize {
             dir.mkdir();
         }
         dir = new File(folderPath + File.separator + "ByIndex");
+        if (!dir.exists()) {
+            dir.mkdir();
+        }
+        dir = new File(folderPath + File.separator + "tmp");
         if (!dir.exists()) {
             dir.mkdir();
         }
@@ -68,6 +73,7 @@ public class Recognize {
                 try {
                     if (listOfFiles[i].getName().endsWith(".jpg")) {
                         row = sheet.createRow(i);
+                        System.out.println(listOfFiles[i].getName());
                         processImage(listOfFiles[i].getName(), folderPath + File.separator, row);
                         File file = new File(folderPath + File.separator + listOfFiles[i].getName());
                         File newfile = new File(folderPath + File.separator + "Processed" + File.separator + listOfFiles[i].getName());
@@ -106,9 +112,12 @@ public class Recognize {
             int rgb, red, green, blue;
             int s = (int) (height * 0.005);
             int limit = (int) (4 * s * s * 0.01);
-            double p = 256 * 0.95;
+            double p = 256 * 0.90;
 
-           // System.out.println(width + "  " + height);
+
+//            ImageIO.write(image, "jpg", new File(folder + "tmp" + File.separator +filename));
+
+            // System.out.println(width + "  " + height);
             for (int row = 0; row < height; row++) {
                 for (int col = 0; col < width; col++) {
                     found[row][col] = false;
@@ -118,10 +127,10 @@ public class Recognize {
                     blue = (rgb) & 0x000000FF;
                     boolean black = false;
                     if (red < p && blue < p && green < p) {
-                    //               image.setRGB(col, row, 0);
+                        // image.setRGB(col, row, 0);
                         black = true;
                     } else {
-                    //                image.setRGB(col, row, 16777215);
+                        // image.setRGB(col, row, 16777215);
                     }
 
                     result[row][col] = black;
@@ -129,7 +138,7 @@ public class Recognize {
                 }
                 //  System.out.println("");
             }
-            // ImageIO.write(image, "jpg", new File(folder + "ByIndex" + File.separator +filename));
+            //ImageIO.write(image, "jpg", new File(folder + "tmp" + File.separator +filename));
 
             //System.out.println(s+"  "+limit);
             for (int row = s; row < height - s; row++) {
@@ -144,10 +153,10 @@ public class Recognize {
                         }
                     }
                     if (count <= limit) {
-                        //    image.setRGB(col, row,  0);
+                        // image.setRGB(col, row, 0);
                         black = true;
                     } else {
-                        //    image.setRGB(col, row, 16777215);
+                        // image.setRGB(col, row, 16777215);
                     }
                     result2[row][col] = black;
 
@@ -155,24 +164,27 @@ public class Recognize {
             }
 
             int y1 = 0, y2 = 0, x1 = 0, x2 = 0, count1 = 0, count2 = 0;
-
-            for (int row = s; row < height / 8; row++) {
-                for (int col = s; col < width / 2; col++) {
+            outerloop:
+            for (int row = height - 2 * s; row > 3 * height / 4; row--) {
+                for (int col = 2 * s; col < width / 2; col++) {
                     if (result2[row][col]) {
                         y1 += row;
                         x1 += col;
                         count1++;
-                        //    System.out.println(col+ "  "+row);
+                        break outerloop;
+                        // System.out.println(col+ "  "+row);
                     }
                 }
             }
 
-            for (int row = s; row < height / 8; row++) {
-                for (int col = (int) width / 2; col < width - s; col++) {
+            outerloop2:
+            for (int row = height - 2 * s; row > 3 * height / 4; row--) {
+                for (int col = (int) width / 2; col < width - 2 * s; col++) {
                     if (result2[row][col]) {
                         y2 += row;
                         x2 += col;
                         count2++;
+                        break outerloop2;
                         //    System.out.println(col+ "  "+row);
                     }
                 }
@@ -182,45 +194,60 @@ public class Recognize {
             x1 = (int) (x1 / count1);
             y2 = (int) (y2 / count2);
             x2 = (int) (x2 / count2);
-            //System.out.println(x2+"  "+x1+" "+y2+"  "+y1);
+            System.out.println(x2 + "  " + x1 + " " + y2 + "  " + y1);
 
             y = 0;
             x = 0;
             cnt = 0;
-            find(found, result, y1, x1);
+            find(found, result, y1, x1, true);
 
             y1 = (int) (y / cnt);
             x1 = (int) (x / cnt);
-            //System.out.println(filename+"  "+x2+"  "+x1+" "+y2+"  "+y1);
             y = 0;
             x = 0;
             cnt = 0;
-            find(found, result, y2, x2);
+            find(found, result, y2, x2, true);
             y2 = (int) (y / cnt);
             x2 = (int) (x / cnt);
 
+            System.out.println(filename+"  "+x2+"  "+x1+" "+y2+"  "+y1);
+
             double r = Math.sqrt((y2 - y1) * (y2 - y1) + (x2 - x1) * (x2 - x1));
-            AffineTransform transform = new AffineTransform();
-            transform.scale(1000 / r, 1000 / r);
+            AffineTransform transform;
+            AffineTransformOp op;
+
+            transform = new AffineTransform();
             transform.rotate(-Math.atan2(y2 - y1, x2 - x1), x1, y1);
-            transform.translate(-x1, -y1);
-            AffineTransformOp op = new AffineTransformOp(transform, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+            op = new AffineTransformOp(transform, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
             image = op.filter(image, null);
-            image = image.getSubimage(0, 0, 1020, 1435);
+
+            transform = new AffineTransform();
+            transform.translate(-x1, 0);
+            op = new AffineTransformOp(transform, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+            image = op.filter(image, null);
+
+            transform = new AffineTransform();
+            transform.scale(1000 / r, 1000 / r);
+            op = new AffineTransformOp(transform, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+            image = op.filter(image, null);
+
+            image = image.getSubimage(0, (int) (y1 * 1000 / r - 1435), 1020, 1435);
+
+            ImageIO.write(image, "jpg", new File(folder + "tmp" + File.separator + "asd" + filename));
 
             int index = 0;
 
             int c = 0;
-            boolean manual=false;
+            boolean manual = false;
             if (filename.contains("-")) {
-                manual=true;
+                manual = true;
                 int index1 = filename.indexOf("-");
                 int index2 = filename.indexOf(".");
-                index = Integer.parseInt(filename.substring(index1+1, index2));
+                index = Integer.parseInt(filename.substring(index1 + 1, index2));
                 //System.out.println("manual "+index);
-                filename=filename.substring(0,index1)+filename.substring(index2);
+                filename = filename.substring(0, index1) + filename.substring(index2);
             }
-            while (c < 5 &&!manual) {
+            while (c < 5 && !manual) {
                 index = getIndex(image, p);
                 //System.out.println(index);
                 if (index < 1000) {
@@ -230,26 +257,27 @@ public class Recognize {
                 } else {
                     break;
                 }
+                //ImageIO.write(image, "jpg", new File(folder + "tmp" + File.separator +filename));
                 c++;
             }
-            if(manual){
+            if (manual) {
                 getIndex(image, p);
             }
             if (index < 1000 || index >= 10000) {
-                throw new Exception();
+                //throw new Exception();
             }
             ImageIO.write(image, "jpg", new File(folder + "ByIndex" + File.separator + index + "-" + filename));
             excelRow.createCell(0).setCellValue(index);
             excelRow.createCell(1).setCellValue(filename);
-            
-            width=image.getWidth();
-            height=image.getHeight();
-            for(int row=0;row<height/2;row++){
-                for(int col=0;col<width;col++){
-                    image.setRGB(col, row, image.getRGB(col,row+height/2));
+
+            width = image.getWidth();
+            height = image.getHeight();
+            for (int row = 0; row < height / 2; row++) {
+                for (int col = 0; col < width; col++) {
+                    image.setRGB(col, row, image.getRGB(col, row + height / 2));
                 }
             }
-            
+
             String[] sol = getSolutions(image);
             for (int q = 0; q < 30; q++) {
                 excelRow.createCell(q + 2).setCellValue(sol[q]);
@@ -265,22 +293,24 @@ public class Recognize {
         }
     }
 
-    private static void find(boolean[][] found, boolean[][] result, int X, int Y) throws Exception {
-        if (!found[X][Y] && result[X][Y]) {
+    private static void find(boolean[][] found, boolean[][] result, int X, int Y, boolean first) throws Exception {
+        if (!found[X][Y] && (first || result[X][Y])) {
             found[X][Y] = true;
             cnt++;
             y += X;
             x += Y;
-            find(found, result, X - 1, Y);
-            find(found, result, X, Y - 1);
-            find(found, result, X, Y + 1);
-            find(found, result, X + 1, Y);
+            find(found, result, X - 1, Y, false);
+            find(found, result, X, Y - 1, false);
+            find(found, result, X, Y + 1, false);
+            find(found, result, X + 1, Y, false);
         }
     }
 
     private static int getIndex(BufferedImage image, double p1) throws Exception {
         int index = 0;
+        boolean firstMark = true;
         int fx, fy, gx, gy, height = image.getHeight(), width = image.getWidth();
+        int x1 = 0, x2 = 0, x3 = 0, y1 = 0, y2 = 0, y3 = 0, c1 = 0, c2 = 0, c3 = 0, r1 = 0, r2 = 0, r3 = 0;
 
         int red, green, blue, rgb;
         for (int row = 0; row < height; row++) {
@@ -298,11 +328,11 @@ public class Recognize {
             }
         }
 
-        fx = 727;
-        fy = 993;
-        gx = 818;
-        gy = 1268;
-
+        fx = 723;
+        fy = 1425 - 413;
+        gx = 813;
+        gy = 1435 - 146;
+        boolean ret = false;
         for (int q = 0; q < 4; q++) {
             int marked = 0;
             for (int a = 0; a < 10; a++) {
@@ -314,36 +344,80 @@ public class Recognize {
 
                         if (rotate[i][j]) {
                             count++;
+                            //    image.setRGB(i, j, 0);
                         }
                         //image.setRGB(i, j, 0);
                     }
                 }
 
                 if (count > 112) {
-                    //System.out.println(" "+q+" "+a+"  "+count);
+                    System.out.println(" " + q + " " + a + "  " + count);
                     index *= 10;
                     index += (a + 1) % 10;
                     marked++;
+
+                    y = 0;
+                    x = 0;
+                    cnt = 0;
+                    find(found, result, fy + qy, fx + qx, true);
+                    if (firstMark) {
+                        firstMark = false;
+                        y1 = (int) (y / cnt);
+                        x1 = (int) (x / cnt);
+                        c1 = q;
+                        r1 = a;
+                    } else {
+                        if (c1 != q) {
+                            y2 = (int) (y / cnt);
+                            x2 = (int) (x / cnt);
+                            c2 = q;
+                            r2 = a;
+                        }
+                        if (r1 != a) {
+                            y3 = (int) (y / cnt);
+                            x3 = (int) (x / cnt);
+                            c3 = q;
+                            r3 = a;
+                        }
+                    }
+
                     // break;
                 }
             }
             if (marked > 1) {
-                return 10000;
+                ret = true;
             }
 
         }
-        //System.out.print("  " + index + "  ");
+        if (x1 != 0 && x2 != 0 && y3 != 0) {
+            System.out.println("asd");
 
+            ux = (int) (x1 - (x2 - x1) * (17 + c1) / (c2 - c1 + 0.0));
+            vx = (int) (x1 - (x2 - x1) * (3 + c1) / (c2 - c1 + 0.0));
+
+            uy = (int) (y1 - (y3 - y1) * (r1 - 1) / (r3 - r1 + 0.0));
+            vy = (int) (y1 - (y3 - y1) * (r1 - 10) / (r3 - r1 + 0.0));
+        } else {
+
+            ux = 209;
+            uy = 1435 - 370;
+            vx = 634;
+            vy = 1435 - 242;
+        }
+        //System.out.print("  " + index + "  ");
+        if (ret) {
+            return 10000;
+        }
         return index;
     }
 
     private static String[] getSolutions(BufferedImage image) {
 
         int fx, fy, gx, gy;
-        fx = 220;
-        fy = 1024;
-        gx = 637;
-        gy = 1149;
+        fx = 215;//ux;   //209
+        fy = 1435 - 393; //uy;  // 1065
+        gx = 633;//vx;   // 634
+        gy = 1435 - 269;//uy ;//+ ((vy - uy)*4)/10; // 1193
         String[] sol = new String[30];
         for (int q = 0; q < 30; q++) {
             sol[q] = "";
@@ -360,15 +434,21 @@ public class Recognize {
                         //image.setRGB(i, j, 0);
                     }
                 }
-                int colour=16777215;
+                int colour = 16777215;
                 if (count > solutionCount) {
                     sol[q] += (char) ('A' + a);
-                    colour=0;
-                //    System.out.println(count+" "+q+"  "+sol[q]);
+                    colour = 0;
+                    //    System.out.println(count+" "+q+"  "+sol[q]);
                 }
                 for (int i = fx + qx - radius; i <= fx + qx + radius; i++) {
                     for (int j = fy + qy - radius; j <= fy + qy + radius; j++) {
-                        image.setRGB(i, j, colour);
+                        if (i >= image.getWidth() || i < 0) continue;
+                        if (j >= image.getHeight() || j < 0) continue;
+                        try {
+                            image.setRGB(i, j, colour);
+                        } catch (Throwable e) {
+                            System.out.println(i + " " + j);
+                        }
                     }
                 }
             }
@@ -381,43 +461,44 @@ public class Recognize {
 
             System.out.print(sol[q]);
             if (q == 14) {
-                fy = 1210;
-                gy = 1328;
+                fy = 1435 - 209;
+                gy = 1435 - 86;
             }
         }
         return sol;
     }
-/*
-    public static void cropHandWritten() {
-        String fPath=folderPath+File.separator+"ByIndex"+File.separator;
-        File folder = new File(fPath);
-        File[] listOfFiles = folder.listFiles();
 
-        File dir = new File(fPath + File.separator + "Name");
-        if (!dir.exists()) {
-            dir.mkdir();
-        }
-        dir = new File(fPath + File.separator + "Telephone");
-        if (!dir.exists()) {
-            dir.mkdir();
-        }
-        dir = new File(fPath + File.separator + "Email");
-        if (!dir.exists()) {
-            dir.mkdir();
-        }
+    /*
+        public static void cropHandWritten() {
+            String fPath=folderPath+File.separator+"ByIndex"+File.separator;
+            File folder = new File(fPath);
+            File[] listOfFiles = folder.listFiles();
 
-        for (File listOfFile : listOfFiles) {
-            if (listOfFile.isFile()) {
-                try {
-                    cropHandWrittenImage(ImageIO.read(new File(fPath + File.separator + listOfFile.getName())), fPath, listOfFile.getName());
-                } catch (IOException e) {
-                }
-                System.out.println(listOfFile.getName());
+            File dir = new File(fPath + File.separator + "Name");
+            if (!dir.exists()) {
+                dir.mkdir();
             }
-        }
+            dir = new File(fPath + File.separator + "Telephone");
+            if (!dir.exists()) {
+                dir.mkdir();
+            }
+            dir = new File(fPath + File.separator + "Email");
+            if (!dir.exists()) {
+                dir.mkdir();
+            }
 
-    }
-*/
+            for (File listOfFile : listOfFiles) {
+                if (listOfFile.isFile()) {
+                    try {
+                        cropHandWrittenImage(ImageIO.read(new File(fPath + File.separator + listOfFile.getName())), fPath, listOfFile.getName());
+                    } catch (IOException e) {
+                    }
+                    System.out.println(listOfFile.getName());
+                }
+            }
+
+        }
+    */
     private static void cropHandWrittenImage(BufferedImage image, String folder, String filename) {
 
         try {
@@ -484,7 +565,7 @@ public class Recognize {
                         f + "ByRank" + File.separator + arr[2] + "-" + arr[0] + "-" + arr[1]
                 );
                 cropHandWrittenImage(ImageIO.read(new File(f + "ByRank" + File.separator + arr[2] + "-" + arr[0] + "-" + arr[1])),
-                        f+"ByRank" + File.separator,arr[2] + "-" + arr[0] + "-" + arr[1]);
+                        f + "ByRank" + File.separator, arr[2] + "-" + arr[0] + "-" + arr[1]);
             }
         } catch (IOException e) {
             System.out.println(e.getLocalizedMessage());

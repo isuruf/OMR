@@ -1,12 +1,10 @@
 package io.github.isuruf.omr;
 
-import java.io.File;
-
 public class App extends javax.swing.JFrame {
     public App() {
         initComponents();
         
-        Folder.setText(System.getProperty("user.dir")+File.separator+"samples");
+        Folder.setText(System.getProperty("user.dir"));
         SolutionCount.setText(Recognize.solutionCount+"");
         jLabel2.setText("Solution Count (/"+(2*Recognize.radius+1)*(2*Recognize.radius+1)+")");
     }

@@ -112,7 +112,7 @@ public class Recognize {
             int rgb, red, green, blue;
             int s = (int) (height * 0.005);
             int limit = (int) (4 * s * s * 0.01);
-            double p = 256 * 0.90;
+            double p = 256 * 0.95;
 
 
 //            ImageIO.write(image, "jpg", new File(folder + "tmp" + File.separator +filename));
@@ -328,10 +328,10 @@ public class Recognize {
             }
         }
 
-        fx = 723;
-        fy = 1425 - 413;
-        gx = 813;
-        gy = 1435 - 146;
+        fx = 718;
+        fy = 1425 - 408;
+        gx = 807;
+        gy = 1435 - 141;
         boolean ret = false;
         for (int q = 0; q < 4; q++) {
             int marked = 0;
@@ -344,9 +344,9 @@ public class Recognize {
 
                         if (rotate[i][j]) {
                             count++;
-                            //    image.setRGB(i, j, 0);
+                            // image.setRGB(i, j, 0);
                         }
-                        //image.setRGB(i, j, 0);
+                        //image.setRGB(i, j, 16777215);
                     }
                 }
 
@@ -415,9 +415,9 @@ public class Recognize {
 
         int fx, fy, gx, gy;
         fx = 215;//ux;   //209
-        fy = 1435 - 393; //uy;  // 1065
+        fy = 1435 - 383; //uy;  // 1065
         gx = 633;//vx;   // 634
-        gy = 1435 - 269;//uy ;//+ ((vy - uy)*4)/10; // 1193
+        gy = 1435 - 259;//uy ;//+ ((vy - uy)*4)/10; // 1193
         String[] sol = new String[30];
         for (int q = 0; q < 30; q++) {
             sol[q] = "";
@@ -461,8 +461,8 @@ public class Recognize {
 
             System.out.print(sol[q]);
             if (q == 14) {
-                fy = 1435 - 209;
-                gy = 1435 - 86;
+                fy = 1435 - 204;
+                gy = 1435 - 81;
             }
         }
         return sol;
